@@ -4,6 +4,7 @@ import re
 import optparse
 from cc import Comments
 
+
 def print_all_properties(rec):
     tmp_dict = vars(rec)
     for k in tmp_dict.keys():
@@ -34,13 +35,6 @@ def parse_cross_reference(cr):
             # ENSP_xxxxxxxxxxx and ENSG_xxxxxxxxxxx
             o['Ensembl'].extend(aggregrate_reference_id('ENS[T|P|G]\d{10,12}', ref[1:]))
     return o
-
-
-# In CC section, they are descriptions of each topic; "FUNCTION" is one of them. Therefore, after we could analyze with
-# text mining technique, these topics, including "FUNCTION" may be included.
-def parse_comments(cc, topic):
-    topic += ":"
-    return [comment.replace(topic + ' ', '').replace('\n', '') for comment in cc if comment.startswith(topic)]
 
 
 def help_func():

@@ -16,6 +16,8 @@ class Comments:
     def get_raw_text(self):
         return self.raw_text
 
+    # In CC section, they are descriptions of each topic; "FUNCTION" is one of them.
+    # Therefore, after we could analyze with text mining technique, these topics, including "FUNCTION" may be included.
     def __get_content(self, cc, topic):
         topic += ":"
         return [comment.replace(topic + ' ', '').replace('\n', '') for comment in cc if comment.startswith(topic)]
