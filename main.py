@@ -2,13 +2,14 @@ from Bio import SwissProt
 import json
 import re
 import optparse
+import sys
 from cc import Comments
 
 
 def print_all_properties(rec):
     tmp_dict = vars(rec)
     for k in tmp_dict.keys():
-        print "%s : %s" % (k, tmp_dict[k])
+        print "%s : %s\n" % (k, tmp_dict[k])
 
 
 # Find the pattern that we want using RegEx
@@ -17,7 +18,7 @@ def aggregrate_reference_id(regex_pattern, _list):
     return [m.group(0) for m in match_result if m is not None]
 
 
-# In this section, there are also many database's names where this protein was referenced. But this time, we just
+# In this function, there are many database where this protein was referenced. But, we just
 # concerned the reference that contained in PDB, RefSeq and Ensembl.
 def parse_cross_reference(cr):
     o = dict()
@@ -37,11 +38,13 @@ def parse_cross_reference(cr):
     return o
 
 
-def help_func():
+def usage():
     p = optparse.OptionParser()
     p.add_option('-i', '--input', default=False, metavar="FILE",
                  help="read input from FILE of Swiss-Prot Database text format (.dat)")
     p.add_option('-o', '--output', default=False, metavar="FILE", help="write output to FILE in JSON format")
+    p.add_option('-t', '--test', default=False, metavar="INT", help="test running by print n line(s) to standard output, n is positive"
+                                                     "integer")
     return p.parse_args()
 
 
@@ -55,12 +58,14 @@ def read_record(input_file):
 
 def main():
     # program's option
-    options, arguments = help_func()
+    options, arguments = usage()
 
     input_file = options.input
     output_file = options.output
+    n_test_print = options.test if type(options.test) is bool else int(options.test)
+    print n_test_print
 
-    with open(output_file, 'w') as handle_out:
+    with (open(output_file, 'w') if output_file else sys.stdout) as handle_out:
         for record in read_record(input_file):
             # put the parsed value from each record to dictionary,
             # and prepare to parse again in JSON object format
@@ -88,14 +93,23 @@ def main():
             json_record = json.dumps(out_dict, sort_keys=True, separators=(',', ':'))
 
             # write out to file
-            handle_out.write(json_record + '\n')
+            if output_file is not None:
+                handle_out.write(json_record + '\n')
+            else:
+                print (json_record + '\n')
 
+            if n_test_print:
+                if n_test_print-1 > 0:
+                    n_test_print -= 1
+                else:
+                    break
 
 def main_test():
-    options, arguments = help_func()
+    options, arguments = usage()
     input_file = options.input
     for record in read_record(input_file):
         # do something to process each record
+        print_all_properties(record)
         break
 
 if __name__ == '__main__':

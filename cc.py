@@ -8,7 +8,8 @@ class ParsingException(Exception):
     def __str__(self):
         return repr(self.value)
 
-
+# In CC section, they are descriptions of each topic; "FUNCTION" is one of topics.
+# RegEx python playground: http://pythex.org/
 class Comments:
     def __init__(self, raw_text):
         self.raw_text = raw_text
@@ -16,25 +17,34 @@ class Comments:
     def get_raw_text(self):
         return self.raw_text
 
-    # In CC section, they are descriptions of each topic; "FUNCTION" is one of them.
-    # Therefore, after we could analyze with text mining technique, these topics, including "FUNCTION" may be included.
+    # In CC section, we use the variable 'topic' to collect its TEXT STRING
     def __get_content(self, cc, topic):
         topic += ":"
         return [comment.replace(topic + ' ', '').replace('\n', '') for comment in cc if comment.startswith(topic)]
 
+    # Get a topic "FUNCTION" from CC section
     def get_topic_function(self):
-        t = self.__get_content(self.raw_text, 'FUNCTION')
+        t = self.__get_content(self.get_raw_text(), 'FUNCTION')
         return t
 
+    # Get a topic "ALTERNATIVE PRODUCTS" from CC section
     def get_topic_alternative_products(self):
         d = dict()
-        t = self.__get_content(self.raw_text, 'ALTERNATIVE PRODUCTS')
+        t = self.__get_content(self.get_raw_text(), 'ALTERNATIVE PRODUCTS')
         if len(t) > 1:
             err_mesg = "In CC section, the \'ALTERNATIVE PRODUCTS\' topic was found more than 1"
             raise ParsingException(err_mesg)
-        # Number of alternative splicing isoform
-        n_as_isoform = int(re.search('Named isoforms=(\d)', t[0]).group(1)) if len(t) != 0 else 0
-        d['nASisoform'] = n_as_isoform
+        #########################################################
+        # >> Next is the TEXT STRING in "ALTERNATIVE PRODUCTS" <<
+        #########################################################
+        if len(t) == 1:
+            # Number of alternative splicing isoform from topic "ALTERNATIVE PRODUCTS"
+            n_as_isoform = int(re.search('Named isoforms=(\d)', t[0]).group(1))
+            d['nASisoform'] = n_as_isoform
+            # Experiment type => 1. Alternative isoform (get AS by natural method?), 2. Alternative initiation (get AS
+            # by chemical substance)
+            exp_type = re.search('Event=(.*?);', t[0]).group(1).split(', ')
+            d['as_event'] = exp_type
         return d
 
 
