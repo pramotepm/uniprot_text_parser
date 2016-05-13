@@ -4,6 +4,7 @@ import re
 import optparse
 import sys
 from cc import Comments
+from cc import ParsingException
 
 
 def print_all_properties(rec):
@@ -13,28 +14,56 @@ def print_all_properties(rec):
 
 
 # Find the pattern that we want using RegEx
-def aggregrate_reference_id(regex_pattern, _list):
+def aggregate_reference_id(regex_pattern, _list):
+    tmp = []
     match_result = [re.search(regex_pattern, member) for member in _list]
-    return [m.group(0) for m in match_result if m is not None]
+    for m in match_result:
+        tmp.append(m.group(1))
+        if m.group(3) is not None:
+            tmp.append(m.group(3))
+    return tmp
+
+
+def _foo(con1, con2, con3, in_list):
+    if len(in_list) > 4:
+        err_mesg = "Cross database references are out of our condition"
+        raise ParsingException(err_mesg)
+    d = dict()
+    while len(in_list) != 0:
+        t = in_list.pop()
+        if t.startswith(con1):
+            d['transcript_id'] = t
+        elif t.startswith(con2):
+            d['protein_id'] = t
+        elif t.startswith(con3):
+            d['gene_id'] = t
+        else:
+            d['isoform_id'] = t
+    return d
 
 
 # In this function, there are many database where this protein was referenced. But, we just
 # concerned the reference that contained in PDB, RefSeq and Ensembl.
 def parse_cross_reference(cr):
     o = dict()
-    o['PDB'] = list()
-    o['RefSeq'] = list()
-    o['Ensembl'] = list()
+    o['pdb'] = list()
+    o['refseq'] = list()
+    o['ensembl'] = list()
     for ref in cr:
         if 'PDB' in ref:
-            o['PDB'].append(ref[1])
-        elif 'RefSeq' in ref:
-            # In RefSeq, we concerned the name of proein that begins with NP_xxxxxx and NP_xxxxxx
-            o['RefSeq'].extend(aggregrate_reference_id('N[M|P]_\d{5,7}\.\d', ref[1:]))
+            o['pdb'].append(ref[1])
         elif 'Ensembl' in ref:
             # In Ensembl, we concerned the name of proein that begins with ENST_xxxxxxxxxxx,
             # ENSP_xxxxxxxxxxx and ENSG_xxxxxxxxxxx
-            o['Ensembl'].extend(aggregrate_reference_id('ENS[T|P|G]\d{10,12}', ref[1:]))
+            ensembl_list = _foo('ENST', 'ENSP', 'ENSG',
+                                aggregate_reference_id('(ENS[T|P|G]\d+)(. \[(.*)\])?', ref[1:]))
+            o['ensembl'].append(ensembl_list)
+            # print o['Ensembl']
+        elif 'RefSeq' in ref:
+            # In RefSeq, we concerned the name of proein that begins with NP_xxxxxx and NP_xxxxxx
+            refseq_list = _foo('NM', 'NP', 'NG',
+                               aggregate_reference_id('([A-Z][A-Z]_\d+\.\d)(. \[(.*)\])?', ref[1:]))
+            o['refseq'].append(refseq_list)
     return o
 
 
@@ -43,8 +72,8 @@ def usage():
     p.add_option('-i', '--input', default=False, metavar="FILE",
                  help="read input from FILE of Swiss-Prot Database text format (.dat)")
     p.add_option('-o', '--output', default=False, metavar="FILE", help="write output to FILE in JSON format")
-    p.add_option('-t', '--test', default=False, metavar="INT", help="test running by print n line(s) to standard output, n is positive"
-                                                     "integer")
+    p.add_option('-t', '--test', default=False, metavar="INT", help="test running by print n line(s) to standard "
+                                                                    "output, n is positive integer")
     return p.parse_args()
 
 
@@ -63,31 +92,33 @@ def main():
     input_file = options.input
     output_file = options.output
     n_test_print = options.test if type(options.test) is bool else int(options.test)
-    print n_test_print
 
     with (open(output_file, 'w') if output_file else sys.stdout) as handle_out:
         for record in read_record(input_file):
             # put the parsed value from each record to dictionary,
             # and prepare to parse again in JSON object format
             out_dict = dict()
-            out_dict['name'] = record.entry_name
+            out_dict['uniprot_id'] = record.entry_name
 
             # for logging, we print name
             print 'Parse: ' + record.entry_name
 
             out_dict['sequence'] = record.sequence
-            out_dict['cross_reference'] = parse_cross_reference(record.cross_references)
+
+            # Add Ensembl, PDB, RefSeq field to DB
+            out_dict.update(parse_cross_reference(record.cross_references))
+
             out_dict['length'] = record.sequence_length
 
             # In the CC section, there are a lot of information,
-            # so we treat they as a class of "Comments" class
+            # so we treat them as a class of "Comments" class
             cc = Comments(record.comments)
-            out_dict['comments'] = dict()
-            out_dict['comments']['function'] = cc.get_topic_function()
-            out_dict['comments']['alternative_products'] = cc.get_topic_alternative_products()
 
-            out_dict['accessions'] = record.accessions
-            out_dict['proved'] = record.data_class
+            out_dict['function'] = cc.get_topic_function()
+            out_dict['alternative_product'] = cc.get_topic_alternative_products()
+
+            out_dict['uniprot_accession'] = record.accessions
+            out_dict['prove'] = record.data_class
 
             # parse into JSON format
             json_record = json.dumps(out_dict, sort_keys=True, separators=(',', ':'))
@@ -103,6 +134,7 @@ def main():
                     n_test_print -= 1
                 else:
                     break
+    print "Run complete"
 
 def main_test():
     options, arguments = usage()

@@ -40,7 +40,7 @@ class Comments:
         if len(t) == 1:
             # Number of alternative splicing isoform from topic "ALTERNATIVE PRODUCTS"
             n_as_isoform = int(re.search('Named isoforms=(\d)', t[0]).group(1))
-            d['nASisoform'] = n_as_isoform
+            d['n_isoform'] = n_as_isoform
             # Experiment type => 1. Alternative isoform (get AS by natural method?), 2. Alternative initiation (get AS
             # by chemical substance)
             exp_type = re.search('Event=(.*?);', t[0]).group(1).split(', ')
