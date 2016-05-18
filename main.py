@@ -11,6 +11,7 @@ def print_all_properties(rec):
     tmp_dict = vars(rec)
     for k in tmp_dict.keys():
         print "%s : %s\n" % (k, tmp_dict[k])
+    print "================"
 
 
 # Find the pattern that we want using RegEx
@@ -49,6 +50,7 @@ def parse_cross_reference(cr):
     o['pdb'] = list()
     o['refseq'] = list()
     o['ensembl'] = list()
+    o['go'] = list()
     for ref in cr:
         if 'PDB' in ref:
             o['pdb'].append(ref[1])
@@ -64,6 +66,9 @@ def parse_cross_reference(cr):
             refseq_list = _foo('NM', 'NP', 'NG',
                                aggregate_reference_id('([A-Z][A-Z]_\d+\.\d)(. \[(.*)\])?', ref[1:]))
             o['refseq'].append(refseq_list)
+        elif 'GO' in ref:
+            a, b = ref[2].split(':', 1)
+            o['go'].append({'id':ref[1], 'domain':a.lower(), 'def':b, 'flag':ref[3]})
     return o
 
 
@@ -73,7 +78,9 @@ def usage():
                  help="read input from FILE of Swiss-Prot Database text format (.dat)")
     p.add_option('-o', '--output', default=False, metavar="FILE", help="write output to FILE in JSON format")
     p.add_option('-t', '--test', default=False, metavar="INT", help="test running by print n line(s) to standard "
-                                                                    "output, n is positive integer")
+                                                                    "output, n is positive integer", type="int")
+    p.add_option('--all-property', action="store_const", default=False, const=True, dest="verbose",
+                 help="use default biopython parser to print all information of record(s)")
     return p.parse_args()
 
 
@@ -89,61 +96,58 @@ def main():
     # program's option
     options, arguments = usage()
 
+    print options
+    # exit(1)
+
     input_file = options.input
     output_file = options.output
-    n_test_print = options.test if type(options.test) is bool else int(options.test)
+    n_test_print = options.test if type(options.test) is bool else options.test
 
     with (open(output_file, 'w') if output_file else sys.stdout) as handle_out:
         for record in read_record(input_file):
-            # put the parsed value from each record to dictionary,
-            # and prepare to parse again in JSON object format
-            out_dict = dict()
-            out_dict['uniprot_id'] = record.entry_name
-
-            # for logging, we print name
-            print 'Parse: ' + record.entry_name
-
-            out_dict['sequence'] = record.sequence
-
-            # Add Ensembl, PDB, RefSeq field to DB
-            out_dict.update(parse_cross_reference(record.cross_references))
-
-            out_dict['length'] = record.sequence_length
-
-            # In the CC section, there are a lot of information,
-            # so we treat them as a class of "Comments" class
-            cc = Comments(record.comments)
-
-            out_dict['function'] = cc.get_topic_function()
-            out_dict['alternative_product'] = cc.get_topic_alternative_products()
-
-            out_dict['uniprot_accession'] = record.accessions
-            out_dict['prove'] = record.data_class
-
-            # parse into JSON format
-            json_record = json.dumps(out_dict, sort_keys=True, separators=(',', ':'))
-
-            # write out to file
-            if output_file is not None:
-                handle_out.write(json_record + '\n')
+            if options.verbose:
+                print_all_properties(record)
             else:
-                print (json_record + '\n')
+                # put the parsed value from each record to dictionary,
+                # and prepare to parse again in JSON object format
+                out_dict = dict()
+                out_dict['uniprot_id'] = record.entry_name
 
+                # for logging, we print name
+                print 'Parse: ' + record.entry_name
+
+                out_dict['sequence'] = record.sequence
+
+                # Add Ensembl, PDB, RefSeq field to DB
+                out_dict.update(parse_cross_reference(record.cross_references))
+
+                out_dict['length'] = record.sequence_length
+
+                # In the CC section, there are a lot of information,
+                # so we treat them as a class of "Comments" class
+                cc = Comments(record.comments)
+
+                out_dict['function'] = cc.get_topic_function()
+                out_dict['alternative_product'] = cc.get_topic_alternative_products()
+
+                out_dict['uniprot_accession'] = record.accessions
+                out_dict['prove'] = record.data_class
+
+                # parse into JSON format
+                json_record = json.dumps(out_dict, sort_keys=True, separators=(',', ':'))
+
+                # write out to file
+                if output_file is not None:
+                    handle_out.write(json_record + '\n')
+                else:
+                    print (json_record + '\n')
+            # how many record will printed
             if n_test_print:
                 if n_test_print-1 > 0:
                     n_test_print -= 1
                 else:
                     break
-    print "Run complete"
-
-def main_test():
-    options, arguments = usage()
-    input_file = options.input
-    for record in read_record(input_file):
-        # do something to process each record
-        print_all_properties(record)
-        break
+        print "Run complete"
 
 if __name__ == '__main__':
     main()
-    # main_test()

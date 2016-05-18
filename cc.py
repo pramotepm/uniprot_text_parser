@@ -34,15 +34,15 @@ class Comments:
         if len(t) > 1:
             err_mesg = "In CC section, the \'ALTERNATIVE PRODUCTS\' topic was found more than 1"
             raise ParsingException(err_mesg)
-        #########################################################
-        # >> Next is the TEXT STRING in "ALTERNATIVE PRODUCTS" <<
-        #########################################################
+        # Put into JSON format
         if len(t) == 1:
             # Number of alternative splicing isoform from topic "ALTERNATIVE PRODUCTS"
             n_as_isoform = int(re.search('Named isoforms=(\d)', t[0]).group(1))
             d['n_isoform'] = n_as_isoform
-            # Experiment type => 1. Alternative isoform (get AS by natural method?), 2. Alternative initiation (get AS
-            # by chemical substance)
+            # Experiment type :
+            #     1. Alternative isoform (get AS by natural method?)
+            #     2. Alternative initiation (get AS by chemical substance)
+            #     etc..
             exp_type = re.search('Event=(.*?);', t[0]).group(1).split(', ')
             d['as_event'] = exp_type
         return d
