@@ -126,7 +126,7 @@ def main():
                 out_dict.update(cc.get_topic_alternative_products())
                 out_dict['isoform_product'] = cc.get_topic_alternative_product_isoform_product()
                 if out_dict['isoform_product'][0]['isoform_id'] == '':
-                    out_dict['isoform_product'][0]['isoform_id'] = record.accessions[0]
+                    out_dict['isoform_product'][0]['isoform_id'] = record.accessions[0] + "-1"
                 out_dict['isoform_product'][0]['seq'] = record.sequence
                 out_dict['isoform_product'][0]['length'] = record.sequence_length
 
