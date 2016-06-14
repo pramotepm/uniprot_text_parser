@@ -64,7 +64,7 @@ class Comments:
         elif len(t) == 0:
             d = dict()
             d['isoform_id'] = ''
-            l.append(0)
+            l.append(d)
         return l
 
 if __name__ == '__main__':
