@@ -35,9 +35,9 @@ class Comments:
             err_mesg = "In CC section, the \'ALTERNATIVE PRODUCTS\' topic was found more than 1"
             raise ParsingException(err_mesg)
         # Put into JSON format
-        if len(t) == 1:
+        elif len(t) == 1:
             # Number of alternative splicing isoform from topic "ALTERNATIVE PRODUCTS"
-            n_as_isoform = int(re.search('Named isoforms=(\d)', t[0]).group(1))
+            n_as_isoform = int(re.search('Named isoforms=(\d+);', t[0]).group(1))
             d['n_isoform'] = n_as_isoform
             # Experiment type :
             #     1. Alternative isoform (get AS by natural method?)
@@ -45,8 +45,27 @@ class Comments:
             #     etc..
             exp_type = re.search('Event=(.*?);', t[0]).group(1).split(', ')
             d['as_event'] = exp_type
+        elif len(t) == 0:
+            d['n_isoform'] = 1
         return d
 
+    def get_topic_alternative_product_isoform_product(self):
+        l = list()
+        t = self.__get_content(self.get_raw_text(), 'ALTERNATIVE PRODUCTS')
+        if len(t) > 1:
+            err_mesg = "In CC section, the \'ALTERNATIVE PRODUCTS\' topic was found more than 1"
+            raise ParsingException(err_mesg)
+        # Put into JSON format
+        elif len(t) == 1:
+            for isoform_id in re.finditer('IsoId=(.*?);', t[0]):
+                d = dict()
+                d['isoform_id'] = isoform_id.group(1)
+                l.append(d)
+        elif len(t) == 0:
+            d = dict()
+            d['isoform_id'] = ''
+            l.append(0)
+        return l
 
 if __name__ == '__main__':
     pass

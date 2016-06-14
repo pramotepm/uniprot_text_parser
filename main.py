@@ -113,22 +113,22 @@ def main():
                 out_dict = dict()
                 out_dict['uniprot_id'] = record.entry_name
 
-                # for logging, we print name
+                # for logging, print name
                 print 'Parse: ' + record.entry_name
-
-                out_dict['sequence'] = record.sequence
 
                 # Add Ensembl, PDB, RefSeq field to DB
                 out_dict.update(parse_cross_reference(record.cross_references))
 
-                out_dict['length'] = record.sequence_length
-
                 # In the CC section, there are a lot of information,
                 # so we treat them as a class of "Comments" class
                 cc = Comments(record.comments)
-
                 out_dict['function'] = cc.get_topic_function()
-                out_dict['alternative_product'] = cc.get_topic_alternative_products()
+                out_dict.update(cc.get_topic_alternative_products())
+                out_dict['isoform_product'] = cc.get_topic_alternative_product_isoform_product()
+                if out_dict['isoform_product'][0]['isoform_id'] == '':
+                    out_dict['isoform_product'][0]['isoform_id'] = record.accessions[0]
+                out_dict['isoform_product'][0]['seq'] = record.sequence
+                out_dict['isoform_product'][0]['length'] = record.sequence_length
 
                 out_dict['uniprot_accession'] = record.accessions
                 out_dict['prove'] = record.data_class
