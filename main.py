@@ -125,10 +125,13 @@ def main():
                 out_dict['function'] = cc.get_topic_function()
                 out_dict.update(cc.get_topic_alternative_products())
                 out_dict['isoform_product'] = cc.get_topic_alternative_product_isoform_product()
+                # In case of there is no isoform, use accession[0] as its isoform ID
                 if out_dict['isoform_product'][0]['isoform_id'] == '':
                     out_dict['isoform_product'][0]['isoform_id'] = record.accessions[0] + "-1"
                 out_dict['isoform_product'][0]['seq'] = record.sequence
                 out_dict['isoform_product'][0]['length'] = record.sequence_length
+                # Set the first isoform as reference isoform (REF)
+                out_dict['isoform_product'][0]['type'] = "ref"
 
                 out_dict['uniprot_accession'] = record.accessions
                 out_dict['prove'] = record.data_class

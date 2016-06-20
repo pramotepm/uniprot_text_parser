@@ -57,10 +57,11 @@ class Comments:
             raise ParsingException(err_mesg)
         # Put into JSON format
         elif len(t) == 1:
-            for isoform_id in re.finditer('IsoId=(.*?);', t[0]):
-                d = dict()
-                d['isoform_id'] = isoform_id.group(1)
-                l.append(d)
+            for isoform_ids in re.finditer('IsoId=(.*?);', t[0]):
+                for isoform_id in isoform_ids.group(1).split(','):
+                    d = dict()
+                    d['isoform_id'] = isoform_id
+                    l.append(d)
         elif len(t) == 0:
             d = dict()
             d['isoform_id'] = ''
