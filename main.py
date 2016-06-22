@@ -3,6 +3,7 @@ import json
 import re
 import optparse
 import sys
+from collections import deque
 from cc import Comments
 from cc import ParsingException
 
@@ -27,11 +28,12 @@ def aggregate_reference_id(regex_pattern, _list):
 
 def _foo(con1, con2, con3, in_list):
     if len(in_list) > 4:
-        err_mesg = "Cross database references are out of our condition"
+        err_mesg = "Cross database references are out of condition"
         raise ParsingException(err_mesg)
     d = dict()
+    in_list = deque(in_list)
     while len(in_list) != 0:
-        t = in_list.pop()
+        t = in_list.popleft()
         if t.startswith(con1):
             d['transcript_id'] = t
         elif t.startswith(con2):
@@ -40,7 +42,10 @@ def _foo(con1, con2, con3, in_list):
             d['gene_id'] = t
         else:
             d['isoform_id'] = t
-    return d
+    if 'transcript_id' not in d and 'protein_id' not in d:
+        return None
+    else:
+        return d
 
 
 # In this function, there are many database where this protein was referenced. But, we just
@@ -65,7 +70,8 @@ def parse_cross_reference(cr):
             # In RefSeq, we concerned the name of proein that begins with NP_xxxxxx and NP_xxxxxx
             refseq_list = _foo('NM', 'NP', 'NG',
                                aggregate_reference_id('([A-Z][A-Z]_\d+\.\d)(. \[(.*)\])?', ref[1:]))
-            o['refseq'].append(refseq_list)
+            if refseq_list is not None:
+                o['refseq'].append(refseq_list)
         elif 'GO' in ref:
             a, b = ref[2].split(':', 1)
             o['go'].append({'id':ref[1], 'domain':a.lower(), 'def':b, 'flag':ref[3]})
@@ -131,7 +137,7 @@ def main():
                 out_dict['isoform_product'][0]['seq'] = record.sequence
                 out_dict['isoform_product'][0]['length'] = record.sequence_length
                 # Set the first isoform as reference isoform (REF)
-                out_dict['isoform_product'][0]['type'] = "ref"
+                out_dict['isoform_product'][0]['is_ref'] = True
 
                 out_dict['uniprot_accession'] = record.accessions
                 out_dict['prove'] = record.data_class

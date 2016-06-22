@@ -57,15 +57,26 @@ class Comments:
             raise ParsingException(err_mesg)
         # Put into JSON format
         elif len(t) == 1:
-            for isoform_ids in re.finditer('IsoId=(.*?);', t[0]):
-                for isoform_id in isoform_ids.group(1).split(','):
-                    d = dict()
-                    d['isoform_id'] = isoform_id
-                    l.append(d)
+            # IsoId=A, B, C ; are all of the protein's alternative splicing isoform from past to present, the first
+            # order of the list of IsoId (A) is the current isoform ID
+            for matched_string in re.finditer('IsoId=(.*?); +Sequence=(.*?);', t[0]):
+                print matched_string
+                history, isoform_note = matched_string.groups()
+                isoform_id_history = history.split(',')
+                isoform_id_current = isoform_id_history[0]
+                d = dict()
+                d['isoform_id'] = isoform_id_current
+                d['note'] = isoform_note
+                if len(isoform_id_history) > 1:
+                    d['obsolete_isoform_id'] = []
+                for isoform_id in isoform_id_history[1:]:
+                    d['obsolete_isoform_id'].append(isoform_id)
+                l.append(d)
         elif len(t) == 0:
             d = dict()
             d['isoform_id'] = ''
             l.append(d)
+        print l
         return l
 
 if __name__ == '__main__':
