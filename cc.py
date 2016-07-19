@@ -60,7 +60,7 @@ class Comments:
             # IsoId=A, B, C ; are all of the protein's alternative splicing isoform from past to present, the first
             # order of the list of IsoId (A) is the current isoform ID
             for matched_string in re.finditer('IsoId=(.*?); +Sequence=(.*?);', t[0]):
-                print matched_string
+                # print matched_string
                 history, isoform_note = matched_string.groups()
                 isoform_id_history = history.split(',')
                 isoform_id_current = isoform_id_history[0]
@@ -76,7 +76,7 @@ class Comments:
             d = dict()
             d['isoform_id'] = ''
             l.append(d)
-        print l
+        # print l
         return l
 
 if __name__ == '__main__':

@@ -3,6 +3,7 @@ import json
 import re
 import optparse
 import sys
+import hashlib
 from collections import deque
 from cc import Comments
 from cc import ParsingException
@@ -98,6 +99,12 @@ def read_record(input_file):
                 yield record
 
 
+def get_digest_md5(seq):
+    m = hashlib.md5()
+    m.update(seq)
+    return m.hexdigest()
+
+
 def main():
     # program's option
     options, arguments = usage()
@@ -138,6 +145,7 @@ def main():
                 out_dict['isoform_product'][0]['length'] = record.sequence_length
                 # Set the first isoform as reference isoform (REF)
                 out_dict['isoform_product'][0]['is_ref'] = True
+                out_dict['isoform_product'][0]['digest'] = get_digest_md5(record.sequence)
 
                 out_dict['uniprot_accession'] = record.accessions
                 out_dict['prove'] = record.data_class
