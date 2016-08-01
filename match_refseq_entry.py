@@ -2,7 +2,7 @@ import re
 import sys
 from myhash import get_digest_md5
 from config import Config
-
+from pymongo import ASCENDING
 
 def read_f(path):
     with open(path, 'rU') as f_in:
@@ -58,11 +58,18 @@ def compare_to_db(NP, NP_rec, NM_rec, seq):
     for doc in cursor:
         uniprot_id = doc['uniprot_id']
         isoform_id = find_isoform_id_for_seq(doc, seq)
-        chk_insert = add_to_matched_NP_NM(doc, uniprot_id, isoform_id, NP_rec, NM_rec) or add_new_NP_NM(doc, uniprot_id, isoform_id, NP_rec, NM_rec)
+        chk_insert = not is_exists(doc, isoform_id, NP_rec, NM_rec) and (add_to_matched_NP_NM(doc, uniprot_id, isoform_id, NP_rec, NM_rec) or add_new_NP_NM(doc, uniprot_id, isoform_id, NP_rec, NM_rec))
         if chk_insert:
             print 'Add RefSeq %s -> SwissProt %s(%s)' % (NP, uniprot_id, isoform_id)
         # else:
             # print 'Collision', uniprot_id, isoform_id, NP_rec, NM_rec, seq
+
+
+def is_exists(doc, isoform_id, NP_rec, NM_rec):
+    for db_isoform_id, db_NP_rec, db_NM_rec in [ (i['isoform_id'], i['protein_id'], i['transcript_id']) for i in doc['refseq'] if 'protein_id' in i and 'transcript_id' in i and 'isoform_id' in i ]:
+        if isoform_id == db_isoform_id and NP_rec == db_NP_rec and NM_rec == db_NM_rec:
+            return True
+    return False
 
 
 def add_to_matched_NP_NM(doc, uniprot_id, isoform_id, NP_rec, NM_rec):
@@ -81,8 +88,9 @@ def add_new_NP_NM(doc, uniprot_id, isoform_id, NP_rec, NM_rec):
 
 def find_isoform_id_for_seq(doc, seq):
     for r in doc['isoform_product']:
-        chk_note = r['note'] != 'Not described' if 'note' in r else True
+        chk_note = (r['note'] != 'Not described' and r['note'] != 'External') if 'note' in r else True
         if chk_note:
+            # print doc['uniprot_id']
             if r['seq'] == seq:
                 return r['isoform_id']
     return False
@@ -92,9 +100,12 @@ def main():
     config = Config()
     global db
     db = config.get_connection_collection()
-    for NP, NP_ver, NM, seq in extract_info(read_f(Config.get_refseq_protein_path())):
+    db.create_index([("isoform_product.digest", ASCENDING)], name="temp1")
+    db.create_index([("uniprot_id", ASCENDING), ("refseq.protein_id", ASCENDING), ("refseq.transcript_id", ASCENDING)], name="temp2")
+    for NP, NP_ver, NM, seq in extract_info(read_f(config.get_refseq_protein_path())):
         compare_to_db(NP, NP_ver, NM, seq)
-
+    db.drop_index("temp1")
+    db.drop_index("temp2")
 
 if __name__ == "__main__":
     main()

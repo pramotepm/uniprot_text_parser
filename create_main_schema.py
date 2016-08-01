@@ -116,7 +116,7 @@ def main():
             out_dict['uniprot_id'] = record.entry_name
 
             # for logging, print name
-            # print 'Parsing from SwissProt: ' + record.entry_name
+            print 'Parsing from SwissProt: ' + record.entry_name
 
             # Add Ensembl, PDB, RefSeq field to DB
             out_dict.update(parse_cross_reference(record.cross_references))
