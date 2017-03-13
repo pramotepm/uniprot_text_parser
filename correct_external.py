@@ -13,9 +13,10 @@ def main():
             isoform_id, isoform_id)
             cursor2 = db.find({"isoform_product.isoform_id": isoform_id}, {"isoform_product": {"$elemMatch": {"isoform_id": isoform_id}}})
             foo = [document2['isoform_product'][0]['seq'] for document2 in cursor2 if 'seq' in document2['isoform_product'][0] and document2['isoform_product'][0]['note'] != 'External']
+            print foo
             if len(foo) != 1:
-                print "Ambiguous External Sequence ! : %s %s" % (uniprot_id, isoform_id)
-                exit(1)
+                print "Delete > : %s %s" % (uniprot_id, isoform_id)   # unable to match with any sequence
+                db.update_one({"uniprot_id": uniprot_id}, {"$pull": {"isoform_product":{"isoform_id": isoform_id}}})
             else:
                 print "Correct > %s %s" % (uniprot_id, isoform_id)
                 seq = foo[0]
