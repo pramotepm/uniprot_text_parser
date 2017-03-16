@@ -34,3 +34,6 @@ class Config:
 
     def get_refseq_protein_path(self):
         return self.__conf.get('refseq', 'protein_seq_path')
+
+    def get_fasta_dir_path(self):
+        return self.__conf.get('output', 'fasta_dir_path')
