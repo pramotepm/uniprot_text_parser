@@ -59,8 +59,8 @@ def compare_to_db(NP, NP_rec, NM_rec, seq):
         uniprot_id = doc['uniprot_id']
         isoform_id = find_isoform_id_for_seq(doc, seq)
         chk_insert = not is_exists(doc, isoform_id, NP_rec, NM_rec) and (add_to_matched_NP_NM(doc, uniprot_id, isoform_id, NP_rec, NM_rec) or add_new_NP_NM(doc, uniprot_id, isoform_id, NP_rec, NM_rec))
-        if chk_insert:
-            print 'Add RefSeq %s -> SwissProt %s(%s)' % (NP, uniprot_id, isoform_id)
+        # if chk_insert:
+            # print 'Add RefSeq %s -> SwissProt %s(%s)' % (NP, uniprot_id, isoform_id)   # print for logging
         # else:
             # print 'Collision', uniprot_id, isoform_id, NP_rec, NM_rec, seq
 

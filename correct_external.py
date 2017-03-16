@@ -15,10 +15,10 @@ def main():
             foo = [document2['isoform_product'][0]['seq'] for document2 in cursor2 if 'seq' in document2['isoform_product'][0] and document2['isoform_product'][0]['note'] != 'External']
             print foo
             if len(foo) != 1:
-                print "Delete > : %s %s" % (uniprot_id, isoform_id)   # unable to match with any sequence
+                # print "Delete > : %s %s" % (uniprot_id, isoform_id)   # unable to match with any sequence, print for logging
                 db.update_one({"uniprot_id": uniprot_id}, {"$pull": {"isoform_product":{"isoform_id": isoform_id}}})
             else:
-                print "Correct > %s %s" % (uniprot_id, isoform_id)
+                # print "Correct > %s %s" % (uniprot_id, isoform_id)   # print for logging
                 seq = foo[0]
                 length = len(seq)
                 digest = get_digest_md5(seq)

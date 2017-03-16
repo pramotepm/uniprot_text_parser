@@ -22,7 +22,7 @@ def main():
                 isoform_id, uniprot_id = ids
                 seq = str(record.seq)
                 length = len(seq)
-                print uniprot_id
+                # print uniprot_id   # print for logging
                 digest = get_digest_md5(seq)
                 db.update_one({"uniprot_id":uniprot_id, "isoform_product.isoform_id": isoform_id}, {"$set": {"isoform_product.$.length": length, "isoform_product.$.seq": seq, "isoform_product.$.digest": digest}})
     db.drop_index("temp1")
