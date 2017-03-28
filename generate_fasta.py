@@ -7,6 +7,10 @@ import os
 
 def main():
     config = Config()
+
+    if not os.path.exists(config.get_fasta_dir_path()):
+        os.mkdir(config.get_fasta_dir_path())
+
     db = config.get_connection_collection()
     for doc in db.find({}, {'uniprot_id':1, 'isoform_product':1}):
         for doc2 in doc['isoform_product']:
