@@ -10,7 +10,7 @@ def main():
     db = config.get_connection_collection()
     for doc in db.find({}, {'uniprot_id':1, 'isoform_product':1}):
         for doc2 in doc['isoform_product']:
-            if 'seq' in doc2:
+            if 'seq' in doc2 and (True if 'note' not in doc2 else doc2['note'] != 'External'):
                 if doc2['digest'] != get_digest_md5(doc2['seq']):
                     exit(1)
                 seq = Seq.Seq(doc2['seq'])
